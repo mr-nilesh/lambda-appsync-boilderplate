@@ -1,0 +1,21 @@
+functions:
+  loginMutation:
+    handler: src/functions/auth/loginMutation.handler
+
+schema: src/functions/auth/auth.graphql
+
+dataSources:
+  - type: AWS_LAMBDA
+    name: LoginMutation
+    description: 'Lambda DataSource'
+    config:
+      lambdaFunctionArn: 'arn:aws:lambda:${self:provider.region}:${self:custom.accountId}:function:${self:service}-${self:provider.stage}-loginMutation'
+      serviceRoleArn: 'arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}'
+      functionName: loginMutation
+
+mappingTemplates:
+  - dataSource: LoginMutation
+    type: Mutation
+    field: login
+    request: 'loginRequestMappingTemplate.txt'
+    response: 'genericResponseMappingTemplate.txt'

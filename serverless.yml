@@ -1,0 +1,123 @@
+service: appsync-lambda-boilerplate
+
+frameworkVersion: '>=1.21.0 <=2.17.0'
+
+provider:
+  name: aws # name of the provider
+  runtime: nodejs12.x
+  stage: ${opt:stage,'local'}
+  region: ap-south-1
+  # profile: #### # aws profile name which we have in .aws folder
+  timeout: 900
+  versionFunctions: false
+  environment:
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 'lambda:InvokeFunction'
+      Resource: '*'
+    - Effect: Allow
+      Action:
+        - 'ec2:DescribeNetworkInterfaces'
+        - 'ec2:CreateNetworkInterface'
+        - 'ec2:DeleteNetworkInterface'
+        - 'ec2:DescribeInstances'
+        - 'ec2:AttachNetworkInterface'
+      Resource:
+        - '*'
+
+plugins:
+  - serverless-plugin-scripts
+  - serverless-appsync-plugin
+  - serverless-appsync-offline
+  - serverless-offline
+  - serverless-webpack
+  - serverless-prune-plugin
+
+custom:
+  prune:
+    includeLayers: true
+    automatic: true
+    number: 3
+  scripts:
+    hooks:
+      'before:offline:start':
+        - ${file(./appsyncSetup.js)}
+        - ${file(mergeSchema.js)}
+  serverless-offline:
+    httpPort: 4000
+  accountId: ############ # aws account id
+  webpack:
+    includeModules:
+      forceInclude:
+        - knex
+        - pg
+        - shared-api
+  appsync-emulator:
+    buildPrefix: .webpack/service
+  appsync-offline:
+    port: 3000
+    schema: schema.graphql
+  appSync:
+    name: ${self:service}-${self:provider.stage}
+    # appId: ${self:provider.environment.APPSYNC_API_ID}
+    # API_KEY: ${self:provider.environment.APPSYNC_API_KEY}
+    authenticationType: API_KEY
+    # authenticationType: OPENID_CONNECT
+    # openIdConnectConfig:
+      # issuer: ${self:provider.environment.AUTH0_DOMAIN}
+      # clientId: ${self:provider.environment.AUTH0_CLIENT_ID}
+      # iatTTL:
+      # authTTL:
+    # additionalAuthenticationProviders:
+      # - authenticationType: API_KEY
+
+    userPoolConfig:
+      awsRegion: # defaults to provider region
+      defaultAction: # required # ALLOW or DENY
+      userPoolId: # required # user pool ID
+      appIdClientRegex: # optional
+
+    schema:
+      - src/functions/index.graphql
+      - ${file(src/functions/auth/auth.yml):schema}
+
+    mappingTemplates:
+      # Query mapping templates
+      - ${file(src/functions/auth/auth.yml):mappingTemplates}
+
+    serviceRole: '${self:provider.region}-${self:provider.stage}-appsynclambdaboilerplate'
+    dataSources:
+      - ${file(src/functions/auth/auth.yml):dataSources}
+
+package:
+  individually: true
+
+functions:
+  - ${file(src/functions/auth/auth.yml):functions}
+
+resources:
+  Resources:
+    appsynclambdaboilerplate:
+      Type: 'AWS::IAM::Role'
+      # Condition: appsynclambdaboilerplate
+      Properties:
+        RoleName: '${self:provider.region}-${self:provider.stage}-appsynclambdaboilerplate'
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: 'Allow'
+              Principal:
+                Service:
+                  - 'appsync.amazonaws.com'
+              Action:
+                - 'sts:AssumeRole'
+        Policies:
+          - PolicyName: '${self:provider.region}-${self:provider.stage}-appsynclambdaboilerplate-Policy'
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: 'Allow'
+                  Action:
+                    - 'lambda:InvokeFunction'
+                  Resource: '*'

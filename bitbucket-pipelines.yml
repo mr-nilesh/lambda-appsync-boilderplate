@@ -1,0 +1,14 @@
+image: node:12.14.0
+
+pipelines:
+  branches:
+    master:
+      - step:
+          script:
+            - npm config set unsafe-perm true
+            - npm install -g serverless@2.17.0 graphql-schema-utilities
+            - npm install
+            - npm rebuild
+            - npm run lint
+            - serverless config credentials --stage dev --provider aws --key $AWS_ACCESS_KEY_ID --secret $AWS_SECRET_ACCESS_KEY
+            - serverless deploy --stage dev
