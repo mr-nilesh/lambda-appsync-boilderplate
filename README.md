@@ -1,2 +1,2 @@
-# ubq-services
+# Lambda Appsync Boilerplate
 
