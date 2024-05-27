@@ -41,7 +41,7 @@ custom:
     number: 3
   serverless-offline:
     httpPort: 4000
-  accountId: 837226227340 # aws account id
+  accountId: ###### # aws account id
   appsync-emulator:
     buildPrefix: .webpack/service
   appsync-simulator:
