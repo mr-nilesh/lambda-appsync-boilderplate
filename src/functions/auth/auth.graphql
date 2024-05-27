@@ -9,5 +9,5 @@ input LoginInput {
 }
 
 extend type Mutation {
-  login(input: LoginInput): User!
+  login(input: LoginInput): User! @aws_api_key
 }

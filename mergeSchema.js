@@ -15,38 +15,42 @@ const awsScalars = [
   'scalar AWSPhone',
   'scalar AWSIPAddress',
   'directive @aws_subscribe(mutations: [String!]!) on FIELD_DEFINITION',
-  'directive @aws_api_key on OBJECT | FIELD_DEFINITION'
+  'directive @aws_api_key on OBJECT | FIELD_DEFINITION',
+  'directive @aws_cognito_user_pools on OBJECT | FIELD_DEFINITION',
 ];
 const mergedSchemaFileName = 'schema.graphql';
 if (fs.existsSync(mergedSchemaFileName)) {
   fs.unlinkSync(mergedSchemaFileName);
 }
-const awsScalarString = awsScalars.join('\r\n');
-const createAWSScalarFile = util.promisify(fs.appendFile);
-createAWSScalarFile('aws-scalar.graphql', awsScalarString).then(() => {
-  process.exec(
-    'graphql-schema-utilities -s "{./aws-scalar.graphql,src/functions/**/*.graphql}" -o "schema1.graphql"',
-    (err) => {
-      if (err) {
-        fs.unlinkSync('aws-scalar.graphql');
-        throw new Error(`Error while generating schema file. ${err}`);
-      } else {
-        const readFile = util.promisify(fs.readFile);
-        readFile('schema1.graphql', { encoding: 'utf8' }).then((file) => {
-          let result = file;
-          awsScalars.forEach((scalar) => {
-            result = result.replace(scalar, '');
+
+module.exports = () => {
+  const awsScalarString = awsScalars.join('\r\n');
+  const createAWSScalarFile = util.promisify(fs.appendFile);
+  createAWSScalarFile('aws-scalar.graphql', awsScalarString).then(() => {
+    process.exec(
+      'graphql-schema-utilities -s "{./aws-scalar.graphql,src/functions/**/*.graphql}" -o "schema-temp.graphql"',
+      (err) => {
+        if (err) {
+          fs.unlinkSync('aws-scalar.graphql');
+          throw new Error(`Error while generating schema file. ${err}`);
+        } else {
+          const readFile = util.promisify(fs.readFile);
+          readFile('schema-temp.graphql', { encoding: 'utf8' }).then((file) => {
+            let result = file;
+            awsScalars.forEach((scalar) => {
+              result = result.replace(scalar, '');
+            });
+            const createSchemaFile = util.promisify(fs.appendFile);
+            createSchemaFile(mergedSchemaFileName, result).then(() => {
+              fs.unlinkSync('schema-temp.graphql');
+              fs.unlinkSync('aws-scalar.graphql');
+              console.log(
+                `New ${mergedSchemaFileName} file generated successfully.`,
+              );
+            });
           });
-          const createSchemaFile = util.promisify(fs.appendFile);
-          createSchemaFile(mergedSchemaFileName, result).then(() => {
-            fs.unlinkSync('schema1.graphql');
-            fs.unlinkSync('aws-scalar.graphql');
-            console.log(
-              `New ${mergedSchemaFileName} file generated successfully.`
-            );
-          });
-        });
-      }
-    }
-  );
-});
+        }
+      },
+    );
+  });
+};

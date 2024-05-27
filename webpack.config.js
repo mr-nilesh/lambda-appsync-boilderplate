@@ -6,14 +6,16 @@ const slsw = require('serverless-webpack');
 const nodeExternals = require('webpack-node-externals');
 // const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 // const { NormalModuleReplacementPlugin } = require('webpack');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
-
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
   context: __dirname,
   mode: slsw.lib.webpack.isLocal ? 'development' : 'production',
   entry: slsw.lib.entries,
+  watch: true,
   devtool: slsw.lib.webpack.isLocal
-    ? 'cheap-module-eval-source-map'
+    ? 'eval-cheap-module-source-map'
     : 'source-map',
   resolve: {
     extensions: ['.mjs', '.json', '.ts'],
@@ -21,6 +23,9 @@ module.exports = {
     cacheWithContext: false,
     plugins: [new TsconfigPathsPlugin()]
   },
+  // optimization: {
+  //   usedExports: false
+  // },
   output: {
     libraryTarget: 'commonjs',
     path: path.join(__dirname, '.webpack'),
@@ -42,23 +47,24 @@ module.exports = {
           ]
         ],
         options: {
-          transpileOnly: true,
-          experimentalWatchApi: true
+          transpileOnly: true
+          // experimentalWatchApi: true
         }
       }
     ]
   },
   plugins: [
-    // Ignore knex dynamic required dialects that we don't use
-    // new NormalModuleReplacementPlugin(
-    //   /m[sy]sql2?|oracle(db)?|sqlite3|pg-(native|query)/,
-    //   'noop2'
-    // )
-    // new ForkTsCheckerWebpackPlugin({
-    //   eslint: true,
-    //   eslintOptions: {
-    //     cache: true
-    //   }
+    // new CopyWebpackPlugin({
+    //   patterns: [{
+    //     from: 'src/templates/emailReminder.html',
+    //     to: 'src/templates/emailReminder.html'
+    //   }, {
+    //     from: 'src/templates/emailSecondReminder.html',
+    //     to: 'src/templates/emailSecondReminder.html'
+    //   }, {
+    //     from: 'src/templates/voteReminder.html',
+    //     to: 'src/templates/voteReminder.html'
+    //   }]
     // })
   ]
 };
