@@ -9,7 +9,7 @@ dataSources:
     name: LoginMutation
     description: 'Lambda DataSource'
     config:
-      lambdaFunctionArn: 'arn:aws:lambda:${self:provider.region}:${self:custom.accountId}:function:${self:service}-${self:provider.stage}-loginMutation'
+      lambdaFunctionArn: 'arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-loginMutation'
       serviceRoleArn: 'arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}'
       functionName: loginMutation
 

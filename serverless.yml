@@ -1,13 +1,13 @@
-service: appsync-lambda-boilerplate
+service: lambda-appsync-boilerplate
 
-frameworkVersion: '>=1.21.0 <=2.17.0'
+frameworkVersion: '3'
 
 provider:
   name: aws # name of the provider
-  runtime: nodejs12.x
+  runtime: nodejs20.x
   stage: ${opt:stage,'local'}
   region: ap-south-1
-  # profile: #### # aws profile name which we have in .aws folder
+  profile: nm_personal_aws # aws profile name which we have in .aws folder
   timeout: 900
   versionFunctions: false
   environment:
@@ -27,50 +27,35 @@ provider:
         - '*'
 
 plugins:
-  - serverless-plugin-scripts
   - serverless-appsync-plugin
-  - serverless-appsync-offline
+  - serverless-appsync-simulator
   - serverless-offline
   - serverless-webpack
   - serverless-prune-plugin
 
 custom:
+  serviceName: ${self:service}
   prune:
     includeLayers: true
     automatic: true
     number: 3
-  scripts:
-    hooks:
-      'before:offline:start':
-        - ${file(./appsyncSetup.js)}
-        - ${file(mergeSchema.js)}
   serverless-offline:
     httpPort: 4000
-  accountId: ############ # aws account id
-  webpack:
-    includeModules:
-      forceInclude:
-        - knex
-        - pg
-        - shared-api
+  accountId: ###### # aws account id
   appsync-emulator:
     buildPrefix: .webpack/service
-  appsync-offline:
+  appsync-simulator:
+    apiKey: da2-fakeApiId123456
+    location: '.webpack/service'
     port: 3000
     schema: schema.graphql
+
   appSync:
-    name: ${self:service}-${self:provider.stage}
-    # appId: ${self:provider.environment.APPSYNC_API_ID}
-    # API_KEY: ${self:provider.environment.APPSYNC_API_KEY}
+    name: ${self:custom.serviceName}-${sls:stage}
     authenticationType: API_KEY
-    # authenticationType: OPENID_CONNECT
-    # openIdConnectConfig:
-      # issuer: ${self:provider.environment.AUTH0_DOMAIN}
-      # clientId: ${self:provider.environment.AUTH0_CLIENT_ID}
-      # iatTTL:
-      # authTTL:
+    # authenticationType: AMAZON_COGNITO_USER_POOLS
     # additionalAuthenticationProviders:
-      # - authenticationType: API_KEY
+    #   - authenticationType: API_KEY
 
     userPoolConfig:
       awsRegion: # defaults to provider region
@@ -86,7 +71,7 @@ custom:
       # Query mapping templates
       - ${file(src/functions/auth/auth.yml):mappingTemplates}
 
-    serviceRole: '${self:provider.region}-${self:provider.stage}-appsynclambdaboilerplate'
+    serviceRole: '${aws:region}-${sls:stage}-${self:custom.serviceName}'
     dataSources:
       - ${file(src/functions/auth/auth.yml):dataSources}
 
@@ -100,9 +85,8 @@ resources:
   Resources:
     appsynclambdaboilerplate:
       Type: 'AWS::IAM::Role'
-      # Condition: appsynclambdaboilerplate
       Properties:
-        RoleName: '${self:provider.region}-${self:provider.stage}-appsynclambdaboilerplate'
+        RoleName: '${aws:region}-${sls:stage}-${self:custom.serviceName}'
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -113,7 +97,7 @@ resources:
               Action:
                 - 'sts:AssumeRole'
         Policies:
-          - PolicyName: '${self:provider.region}-${self:provider.stage}-appsynclambdaboilerplate-Policy'
+          - PolicyName: '${aws:region}-${sls:stage}-${self:custom.serviceName}-policy'
             PolicyDocument:
               Version: '2012-10-17'
               Statement:

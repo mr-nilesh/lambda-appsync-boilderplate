@@ -1,37 +1,28 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require('fs');
 const fsPromise = fs.promises;
-const mtDirName = 'mapping-templates'; // mapping template directory name
-const lambdaFunctionsDir = 'src/functions'; // lambda functions src directory
-// virginia
-// const vpcConfig = `    fileSystemConfig:
-//       localMountPath: /mnt/downloads
-//       arn: arn:aws:elasticfilesystem:us-east-1:627463570989:access-point/fsap-0a93eb5fe0cceeaec
-//     vpc:
-//       securityGroupIds:
-//         - sg-eca54eb4
-//       subnetIds:
-//         - subnet-d189c68d
-//         - subnet-7ed1c334
-//         - subnet-bf5614d8
-//         - subnet-c06bfdfe
-//         - subnet-b689c098
-//     memorySize: 3000
-// `;
-// mumbai
-const vpcConfig = `    fileSystemConfig:
+let mtDirName = 'mapping-templates'; // mapping template directory name
+let lambdaFunctionsDir = 'src/functions'; // lambda functions src directory
+const EFS_ACCESS = '${self:provider.environment.EFS_ACCESS}';
+const VPC_SECURITY_GROUP = '${self:provider.environment.VPC_SECURITY_GROUP}';
+const VPC_SUBNET1 = '${self:provider.environment.VPC_SUBNET1}';
+const VPC_SUBNET2 = '${self:provider.environment.VPC_SUBNET2}';
+const layer =
+  'arn:aws:lambda:ap-southeast-1:468491936494:layer:fpam-api-layer:1';
+const fileSystemConfig = `    fileSystemConfig:
       localMountPath: /mnt/downloads
-      arn: arn:aws:elasticfilesystem:ap-south-1:627463570989:access-point/fsap-02a8881b7fa5dbe7d
-    vpc:
-      securityGroupIds:
-        - sg-27330c4b
-      subnetIds:
-        - subnet-17c5495b
-        - subnet-6d762905
-        - subnet-0e568175
-    memorySize: 3000
+      arn: ${EFS_ACCESS}
 `;
-const applyVpcToLambdas = ['downloadRoomContentQuery', 'getBillingInfoQuery'];
+const vpcConfig = `    vpc:
+      securityGroupIds:
+        - ${VPC_SECURITY_GROUP}
+      subnetIds:
+        - ${VPC_SUBNET1}
+        - ${VPC_SUBNET2}
+`;
+
+const addFileSystemSupportToLambdas = [];
+let applyVpcToLambdas = [];
 
 /**
  * Read all the functions from the src directory and generate
@@ -54,7 +45,7 @@ const readFiles = async (dirname) => {
       let ymlFileSchemaContent = `schema: ${path}/${file}.graphql\n`;
       const lambdaFunctions = await fsPromise.readdir(path);
       lambdaFunctions.forEach(async (fn) => {
-        if (fn.includes('.ts') && !fn.includes('-rest.ts')) {
+        if (fn.includes('.ts') && !fn.includes('Rest.ts')) {
           let isMutation = false;
           if (fn.includes('Mutation.ts')) {
             isMutation = true;
@@ -68,7 +59,7 @@ const readFiles = async (dirname) => {
             ymlFileLambdaContent,
             ymlFileMTContent,
             ymlDatasourceContent,
-            isMutation
+            isMutation,
           );
           ymlFileLambdaContent = res.ymlFileLambdaContent;
           ymlFileMTContent = res.ymlFileMTContent;
@@ -82,7 +73,7 @@ const readFiles = async (dirname) => {
         ymlFileLambdaContent,
         ymlFileSchemaContent,
         ymlFileMTContent,
-        ymlDatasourceContent
+        ymlDatasourceContent,
       );
     }
   });
@@ -104,7 +95,7 @@ const createMappingTemplateFile = (fileName) => {
   fileName = removePostfixFromFile(fileName);
   const path = `${mtDirName}/${fileName}RequestMappingTemplate.txt`;
   if (!fs.existsSync(path)) {
-    fs.appendFile(
+    fs.appendFileSync(
       path,
       `{
   "version": "2017-02-28",
@@ -116,7 +107,7 @@ const createMappingTemplateFile = (fileName) => {
       "userId": $utils.toJson($context.identity.sub)
     }
   }
-}`
+}`,
     );
   }
 };
@@ -139,13 +130,13 @@ const removePostfixFromFile = (fileName) => {
 const createGenericResponseMappingTemplate = () => {
   const path = `${mtDirName}/genericResponseMappingTemplate.txt`;
   if (!fs.existsSync(path)) {
-    fs.appendFile(
+    fs.appendFileSync(
       path,
       `#if ($context.result.errorMessage)
   $utils.error($context.result.errorMessage, $context.result.errorType, $context.result.data, $context.result.errorInfo)
 #else
   $utils.toJson($context.result)
-#end`
+#end`,
     );
   }
 };
@@ -160,17 +151,17 @@ const createYmlFile = (
   ymlFileLambdaContent,
   ymlFileSchemaContent,
   ymlFileMTContent,
-  ymlDatasourceContent
+  ymlDatasourceContent,
 ) => {
   const newFile = `${path}/${fileName}.yml`;
-  fs.writeFile(newFile, '');
+  fs.writeFileSync(newFile, '');
   if (update) {
-    fs.appendFile(
+    fs.appendFileSync(
       newFile,
       `${ymlFileLambdaContent}
 ${ymlFileSchemaContent}
 ${ymlDatasourceContent}
-${ymlFileMTContent}`
+${ymlFileMTContent}`,
     );
   }
 };
@@ -181,14 +172,21 @@ const prepareYmlFile = (
   ymlFileLambdaContent,
   ymlFileMTContent,
   ymlDatasourceContent,
-  isMutation
+  isMutation,
 ) => {
   ymlFileLambdaContent += `  ${lambdaName}:
     handler: ${filePath}
 `;
+  if (addFileSystemSupportToLambdas.indexOf(lambdaName) >= 0) {
+    ymlFileLambdaContent += fileSystemConfig;
+    ymlFileLambdaContent += vpcConfig;
+  }
+
   if (applyVpcToLambdas.indexOf(lambdaName) >= 0) {
     ymlFileLambdaContent += vpcConfig;
   }
+  // NOTE: Now we need every lambda in VPC for secure mongo connection,
+  // so in future we won't have any type of internet attack on our database.
 
   const capitalizeDSName =
     lambdaName.charAt(0).toUpperCase() + lambdaName.substring(1);
@@ -196,7 +194,7 @@ const prepareYmlFile = (
     name: ${capitalizeDSName}
     description: 'Lambda DataSource'
     config:
-      lambdaFunctionArn: 'arn:aws:lambda:\${self:provider.region}:\${self:custom.accountId}:function:\${self:service}-\${self:provider.stage}-${lambdaName}'
+      lambdaFunctionArn: 'arn:aws:lambda:\${aws:region}:\${self:custom.accountId}:function:\${self:service}-\${sls:stage}-${lambdaName}'
       serviceRoleArn: 'arn:aws:iam::\${self:custom.accountId}:role/\${self:custom.appSync.serviceRole}'
       functionName: ${lambdaName}
 `;
@@ -212,7 +210,7 @@ const prepareYmlFile = (
   return {
     ymlFileLambdaContent,
     ymlFileMTContent,
-    ymlDatasourceContent
+    ymlDatasourceContent,
   };
 };
 
@@ -225,7 +223,9 @@ const convertDashToCamleCase = (name) => {
   return newName;
 };
 
-console.log('Setting up appsync mapping templates and serverless yml files.');
-createMappingTemplatesDir();
-createGenericResponseMappingTemplate();
-readFiles(lambdaFunctionsDir);
+module.exports = () => {
+  console.log('Setting up appsync mapping templates and serverless yml files.');
+  createMappingTemplatesDir();
+  createGenericResponseMappingTemplate();
+  readFiles(lambdaFunctionsDir);
+};
