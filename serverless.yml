@@ -41,14 +41,16 @@ custom:
     number: 3
   serverless-offline:
     httpPort: 4000
-  accountId: ###### # aws account id
+  accountId: ######## # aws account id
   appsync-emulator:
     buildPrefix: .webpack/service
   appsync-simulator:
     apiKey: da2-fakeApiId123456
     location: '.webpack/service'
     port: 3000
-    schema: schema.graphql
+    watch:
+      - 'src/functions/*.graphql'
+      - 'src/functions/**/*.graphql'
 
   appSync:
     name: ${self:custom.serviceName}-${sls:stage}
