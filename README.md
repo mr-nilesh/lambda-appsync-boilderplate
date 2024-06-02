@@ -38,11 +38,11 @@ Why do we need to do this, because our automation script creates the mapping-tem
 ## What does our automation script do?
 It reads Query/Mutation suffix from the lambda name.
 
-It adds the entry of lambda function to a partucular module's .yml file
+It adds the entry of lambda function to a particular module's .yml file
 
-It adds the entry of lambda datasource to a partucular module's .yml file
+It adds the entry of lambda datasource to a particular module's .yml file
 
-It add the entry of schema file to a partucular module's .yml file
+It add the entry of schema file to a particular module's .yml file
 
 It creates the mapping-template(inside mapping-templates directive which is located in the root directive) to map the AppSync query/mutation to the particular lambda as a datasource.
 
