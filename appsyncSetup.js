@@ -45,7 +45,7 @@ const readFiles = async (dirname) => {
       let ymlFileSchemaContent = `schema: ${path}/${file}.graphql\n`;
       const lambdaFunctions = await fsPromise.readdir(path);
       lambdaFunctions.forEach(async (fn) => {
-        if (fn.includes('.ts') && !fn.includes('Rest.ts')) {
+        if (fn.includes('.ts') && (fn.includes('Mutation.ts') || fn.includes('Query.ts'))) {
           let isMutation = false;
           if (fn.includes('Mutation.ts')) {
             isMutation = true;

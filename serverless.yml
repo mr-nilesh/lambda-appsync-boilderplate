@@ -41,7 +41,7 @@ custom:
     number: 3
   serverless-offline:
     httpPort: 4000
-  accountId: ######## # aws account id
+  accountId: 837226227340 # aws account id
   appsync-emulator:
     buildPrefix: .webpack/service
   appsync-simulator:
@@ -68,20 +68,24 @@ custom:
     schema:
       - src/functions/index.graphql
       - ${file(src/functions/auth/auth.yml):schema}
+      - ${file(src/functions/users/users.yml):schema}
 
     mappingTemplates:
       # Query mapping templates
       - ${file(src/functions/auth/auth.yml):mappingTemplates}
+      - ${file(src/functions/users/users.yml):mappingTemplates}
 
     serviceRole: '${aws:region}-${sls:stage}-${self:custom.serviceName}'
     dataSources:
       - ${file(src/functions/auth/auth.yml):dataSources}
+      - ${file(src/functions/users/users.yml):dataSources}
 
 package:
   individually: true
 
 functions:
   - ${file(src/functions/auth/auth.yml):functions}
+  - ${file(src/functions/users/users.yml):functions}
 
 resources:
   Resources:

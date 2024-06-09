@@ -1,0 +1,21 @@
+functions:
+  getUsersQuery:
+    handler: src/functions/users/getUsersQuery.handler
+
+schema: src/functions/users/users.graphql
+
+dataSources:
+  - type: AWS_LAMBDA
+    name: GetUsersQuery
+    description: 'Lambda DataSource'
+    config:
+      lambdaFunctionArn: 'arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-getUsersQuery'
+      serviceRoleArn: 'arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}'
+      functionName: getUsersQuery
+
+mappingTemplates:
+  - dataSource: GetUsersQuery
+    type: Query
+    field: getUsers
+    request: 'getUsersRequestMappingTemplate.txt'
+    response: 'genericResponseMappingTemplate.txt'

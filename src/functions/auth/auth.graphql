@@ -1,4 +1,4 @@
-type User {
+type LoggedInUser {
   id: ID!
   name: String!
 }
@@ -9,5 +9,5 @@ input LoginInput {
 }
 
 extend type Mutation {
-  login(input: LoginInput): User! @aws_api_key
+  login(input: LoginInput): LoggedInUser! @aws_api_key
 }

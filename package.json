@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@nestjs/core": "^10.3.9",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "tslib": "^2.0.1"
   },
