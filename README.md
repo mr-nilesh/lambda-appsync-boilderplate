@@ -1,4 +1,4 @@
-# Lambda Appsync Boilerplate
+# Lambda Appsync Boilerplate (with and without NestJS)
 
 ## Prerequisite
 
@@ -58,3 +58,7 @@ mappingTemplates:
 dataSources:
   - ${file(src/functions/users/users.yml):dataSources}
 ```
+
+## With NestJS
+
+This boilerplate also support NestJS implementation. To learn about it move to nest_architecture branch.
