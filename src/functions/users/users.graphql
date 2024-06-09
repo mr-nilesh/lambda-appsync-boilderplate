@@ -1,0 +1,9 @@
+type User {
+  firstName: String
+  lastName: String
+  mobile: String
+}
+
+extend type Query {
+  getUsers: [User]
+}
