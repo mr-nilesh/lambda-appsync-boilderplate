@@ -3,6 +3,10 @@ type User {
   name: String!
 }
 
+type LogoutResponse {
+  message: String
+}
+
 input LoginInput {
   email: String!
   password: String!
@@ -10,4 +14,5 @@ input LoginInput {
 
 extend type Mutation {
   login(input: LoginInput): User! @aws_api_key
+  logout: LogoutResponse!
 }

@@ -1,6 +1,8 @@
 functions:
   loginMutation:
     handler: src/functions/auth/loginMutation.handler
+  logoutMutation:
+    handler: src/functions/auth/logoutMutation.handler
 
 schema: src/functions/auth/auth.graphql
 
@@ -12,10 +14,22 @@ dataSources:
       lambdaFunctionArn: 'arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-loginMutation'
       serviceRoleArn: 'arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}'
       functionName: loginMutation
+  - type: AWS_LAMBDA
+    name: LogoutMutation
+    description: 'Lambda DataSource'
+    config:
+      lambdaFunctionArn: 'arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-logoutMutation'
+      serviceRoleArn: 'arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}'
+      functionName: logoutMutation
 
 mappingTemplates:
   - dataSource: LoginMutation
     type: Mutation
     field: login
     request: 'loginRequestMappingTemplate.txt'
+    response: 'genericResponseMappingTemplate.txt'
+  - dataSource: LogoutMutation
+    type: Mutation
+    field: logout
+    request: 'logoutRequestMappingTemplate.txt'
     response: 'genericResponseMappingTemplate.txt'
