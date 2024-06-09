@@ -5,7 +5,7 @@ export const handler = async (): Promise<any> => {
       createdBy: 'Nilesh Mistry'
     }]
   } catch (error) {
-    console.error(`[Login] Lambda Error: ${error}`);
+    console.error(`[GetLatestEvents] Lambda Error: ${error}`);
     throw error;
   }
 };
