@@ -1,0 +1,21 @@
+functions:
+  getLatestEventsQuery:
+    handler: src/functions/dashboard/getLatestEventsQuery.handler
+
+schema: src/functions/dashboard/dashboard.graphql
+
+dataSources:
+  - type: AWS_LAMBDA
+    name: GetLatestEventsQuery
+    description: 'Lambda DataSource'
+    config:
+      lambdaFunctionArn: 'arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-getLatestEventsQuery'
+      serviceRoleArn: 'arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}'
+      functionName: getLatestEventsQuery
+
+mappingTemplates:
+  - dataSource: GetLatestEventsQuery
+    type: Query
+    field: getLatestEvents
+    request: 'getLatestEventsRequestMappingTemplate.txt'
+    response: 'genericResponseMappingTemplate.txt'

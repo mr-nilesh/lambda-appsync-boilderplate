@@ -68,20 +68,24 @@ custom:
     schema:
       - src/functions/index.graphql
       - ${file(src/functions/auth/auth.yml):schema}
+      - ${file(src/functions/dashboard/dashboard.yml):schema}
 
     mappingTemplates:
       # Query mapping templates
       - ${file(src/functions/auth/auth.yml):mappingTemplates}
+      - ${file(src/functions/dashboard/dashboard.yml):mappingTemplates}
 
     serviceRole: '${aws:region}-${sls:stage}-${self:custom.serviceName}'
     dataSources:
       - ${file(src/functions/auth/auth.yml):dataSources}
+      - ${file(src/functions/dashboard/dashboard.yml):dataSources}
 
 package:
   individually: true
 
 functions:
   - ${file(src/functions/auth/auth.yml):functions}
+  - ${file(src/functions/dashboard/dashboard.yml):functions}
 
 resources:
   Resources:

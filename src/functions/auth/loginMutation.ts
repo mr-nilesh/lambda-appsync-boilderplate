@@ -1,6 +1,3 @@
-/**
- *  Returns payment details by payment id
- */
 export const handler = async (event: any): Promise<any> => {
   try {
     const args = event.arguments;
@@ -12,6 +9,6 @@ export const handler = async (event: any): Promise<any> => {
     };
   } catch (error) {
     console.error(`[Login] Lambda Error: ${error}`);
-  } finally {
+    throw error;
   }
 };

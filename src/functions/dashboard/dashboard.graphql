@@ -1,0 +1,8 @@
+type Event {
+  name: String
+  createdBy: String
+}
+
+extend type Query {
+  getLatestEvents: [Event]
+}
